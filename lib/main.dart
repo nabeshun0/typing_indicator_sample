@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -117,6 +119,14 @@ class TypingIndicator extends StatefulWidget {
 
 class _TypingIndicatorState extends State<TypingIndicator>
     with TickerProviderStateMixin {
+  // TODO: indicator animation
+  late AnimationController _repeatingController;
+  final List<Interval> _dotIntervals = const [
+    Interval(0.25, 0.8),
+    Interval(0.35, 0.9),
+    Interval(0.45, 1.0),
+  ];
+
   late AnimationController _appearanceController;
   late Animation<double> _indicatorSpaceAnimation;
   late Animation<double> _smallBubbleAnimation;
@@ -126,6 +136,11 @@ class _TypingIndicatorState extends State<TypingIndicator>
   @override
   void initState() {
     super.initState();
+
+    _repeatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
 
     _appearanceController = AnimationController(
       vsync: this,
@@ -179,6 +194,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
   @override
   void dispose() {
     _appearanceController.dispose();
+    _repeatingController.dispose();
     super.dispose();
   }
 
@@ -186,12 +202,35 @@ class _TypingIndicatorState extends State<TypingIndicator>
     _appearanceController
       ..duration = const Duration(milliseconds: 750)
       ..forward();
+    _repeatingController.repeat();
   }
 
   void _hideIndicator() {
     _appearanceController
       ..duration = const Duration(milliseconds: 150)
       ..reverse();
+    _repeatingController.stop();
+  }
+
+  Widget _buildFlashingCircle(int index) {
+    return AnimatedBuilder(
+      animation: _repeatingController,
+      builder: (context, child) {
+        final circleFlashPercent =
+            _dotIntervals[index].transform(_repeatingController.value);
+        final circleColorPercent = sin(pi * circleFlashPercent);
+
+        return Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Color.lerp(widget.flashingCircleDarkColor,
+                widget.flashingCircleBrightColor, circleColorPercent),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -272,6 +311,14 @@ class _TypingIndicatorState extends State<TypingIndicator>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(27),
         color: widget.bubbleColor,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildFlashingCircle(0),
+          _buildFlashingCircle(1),
+          _buildFlashingCircle(2),
+        ],
       ),
     );
   }
