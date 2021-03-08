@@ -119,6 +119,9 @@ class _TypingIndicatorState extends State<TypingIndicator>
     with TickerProviderStateMixin {
   late AnimationController _appearanceController;
   late Animation<double> _indicatorSpaceAnimation;
+  late Animation<double> _smallBubbleAnimation;
+  late Animation<double> _mediumBubbleAnimation;
+  late Animation<double> _largeBubbleAnimation;
 
   @override
   void initState() {
@@ -136,6 +139,24 @@ class _TypingIndicatorState extends State<TypingIndicator>
       begin: 0.0,
       end: 60.0,
     ));
+
+    // TODO: bubbleAnimation
+
+    _smallBubbleAnimation = CurvedAnimation(
+      parent: _appearanceController,
+      curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
+      reverseCurve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+    );
+    _mediumBubbleAnimation = CurvedAnimation(
+      parent: _appearanceController,
+      curve: const Interval(0.2, 0.7, curve: Curves.elasticOut),
+      reverseCurve: const Interval(0.2, 0.6, curve: Curves.easeOut),
+    );
+    _largeBubbleAnimation = CurvedAnimation(
+      parent: _appearanceController,
+      curve: const Interval(0.3, 1.0, curve: Curves.elasticOut),
+      reverseCurve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+    );
 
     if (widget.showIndicator) {
       _showIndicator();
@@ -181,8 +202,77 @@ class _TypingIndicatorState extends State<TypingIndicator>
       builder: (context, child) {
         return SizedBox(
           height: _indicatorSpaceAnimation.value,
+          child: child,
         );
       },
+      child: Stack(
+        children: [
+          _buildAnimatedBubble(
+            animation: _smallBubbleAnimation,
+            left: 8,
+            bottom: 8,
+            bubble: _buildCircleBubble(8),
+          ),
+          _buildAnimatedBubble(
+            animation: _mediumBubbleAnimation,
+            left: 10,
+            bottom: 10,
+            bubble: _buildCircleBubble(16),
+          ),
+          _buildAnimatedBubble(
+            animation: _largeBubbleAnimation,
+            left: 12,
+            bottom: 12,
+            bubble: _buildStatusBubble(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedBubble({
+    required Animation<double> animation,
+    required double left,
+    required double bottom,
+    required Widget bubble,
+  }) {
+    return Positioned(
+      left: left,
+      bottom: bottom,
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: animation.value,
+            alignment: Alignment.bottomLeft,
+            child: child,
+          );
+        },
+        child: bubble,
+      ),
+    );
+  }
+
+  Widget _buildCircleBubble(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: widget.bubbleColor,
+      ),
+    );
+  }
+
+  Widget _buildStatusBubble() {
+    return Container(
+      width: 85,
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(27),
+        color: widget.bubbleColor,
+      ),
     );
   }
 }
